@@ -1,0 +1,6 @@
+@ReturnResponse_HostAddress = http://localhost:5018
+
+GET {{ReturnResponse_HostAddress}}/api/HttpResponseModel/1
+Accept: application/json
+
+###
