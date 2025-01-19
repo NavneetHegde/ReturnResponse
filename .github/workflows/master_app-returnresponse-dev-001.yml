@@ -54,6 +54,13 @@ jobs:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_92C9306593B14AF688D25DFDBC5322D6 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_9295061F61D3457B92B07F2DF72B6E97 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_175AA77104E64B9B8E34FF5672D6C822 }}
+     
+      - name: Set Key Vault Secrets as Environment Variables
+        uses: azure/azure-keyvault@v1
+        with:
+          keyvault: ${{ secrets.AZURE_KEYVAULT_URI }}
+        env:
+          KEYVAULT_URI: ${{ secrets.AZURE_KEYVAULT_URI }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
