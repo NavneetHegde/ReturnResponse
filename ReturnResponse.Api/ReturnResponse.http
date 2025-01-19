@@ -1,6 +1,19 @@
 @ReturnResponse_HostAddress = http://localhost:5018
 
-GET {{ReturnResponse_HostAddress}}/api/HttpResponseModel/1
+GET {{ReturnResponse_HostAddress}}/httpResponse/45b92526-3bfd-4d04-b098-f15178ebc587
 Accept: application/json
 
-###
+
+### Post a new HTTP response model
+POST  {{ReturnResponse_HostAddress}}/HttpResponse
+Content-Type: application/json
+
+{
+  "StatusCode": 401,
+  "ReasonPhrase": "OK",
+  "Timestamp": "2023-10-10T14:48:00Z",
+  "Body": {
+    "message": "This is a sample response body"
+  }
+}
+

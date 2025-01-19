@@ -46,8 +46,8 @@ namespace ReturnResponse.Api.Tests.Controllers
                 ReasonPhrase = "OK",
                 Timestamp = DateTime.UtcNow,
                 Body = "Response body",
-                Headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } },
-                Cookies = new Dictionary<string, string> { { "CookieKey", "CookieValue" } }
+                //Headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } },
+                //Cookies = new Dictionary<string, string> { { "CookieKey", "CookieValue" } }
             };
 
             // Act
@@ -96,13 +96,12 @@ namespace ReturnResponse.Api.Tests.Controllers
             var id = Guid.NewGuid().ToString();
             var httpResponse = new HttpResponseModel
             {
-                Id = id,
                 StatusCode = 200,
                 ReasonPhrase = "OK",
                 Timestamp = DateTime.UtcNow,
                 Body = "Updated response body",
-                Headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } },
-                Cookies = new Dictionary<string, string> { { "CookieKey", "CookieValue" } }
+                //Headers = new Dictionary<string, string> { { "HeaderKey", "HeaderValue" } },
+                //Cookies = new Dictionary<string, string> { { "CookieKey", "CookieValue" } }
             };
 
             // Act

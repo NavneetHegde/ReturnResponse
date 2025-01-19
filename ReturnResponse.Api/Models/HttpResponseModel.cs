@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -12,10 +11,8 @@ namespace ReturnResponse.Api.Models
     /// </summary>
     public class HttpResponseModel
     {
-        /// <summary>
-        /// Gets or sets the unique identifier for the HTTP response.
-        /// </summary>
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        
+        public string Id { get; } = Guid.NewGuid().ToString();
 
         /// <summary>
         /// Gets or sets the status code of the HTTP response.
@@ -32,15 +29,15 @@ namespace ReturnResponse.Api.Models
         /// </summary>
         public DateTime Timestamp { get; set; }
 
-        /// <summary>
-        /// Gets or sets the headers to be included in the HTTP response.
-        /// </summary>
-        public Dictionary<string, string> Headers { get; set; } = new();
+        ///// <summary>
+        ///// Gets or sets the headers to be included in the HTTP response.
+        ///// </summary>
+        //public Dictionary<string, string> Headers { get; set; } = new();
 
-        /// <summary>
-        /// Gets or sets the cookies to be included in the HTTP response.
-        /// </summary>
-        public Dictionary<string, string> Cookies { get; set; } = new();
+        ///// <summary>
+        ///// Gets or sets the cookies to be included in the HTTP response.
+        ///// </summary>
+        //public Dictionary<string, string> Cookies { get; set; } = new();
 
         /// <summary>
         /// Gets or sets the body of the HTTP response.
@@ -69,20 +66,28 @@ namespace ReturnResponse.Api.Models
                 Content = new StringContent(JsonConvert.SerializeObject(this), Encoding.UTF8, "application/json")
             };
 
-            // Add the headers to the response
-            foreach (var header in Headers)
-            {
-                response.Headers.Add(header.Key, header.Value);
-            }
+            //// Add the headers to the response
+            //foreach (var header in Headers)
+            //{
+            //    response.Headers.Add(header.Key, header.Value);
+            //}
 
-            // Add the cookies to the response
-            foreach (var cookie in Cookies)
-            {
-                response.Headers.Add("Set-Cookie", $"{cookie.Key}={cookie.Value}");
-            }
+            //// Add the cookies to the response
+            //foreach (var cookie in Cookies)
+            //{
+            //    response.Headers.Add("Set-Cookie", $"{cookie.Key}={cookie.Value}");
+            //}
 
             // Return the response
             return response;
+        }
+
+        public void Validate()
+        {
+            if (!Enum.IsDefined(typeof(HttpStatusCode), StatusCode))
+            {
+                throw new ArgumentException("Invalid HTTP status code.");
+            }
         }
 
     }

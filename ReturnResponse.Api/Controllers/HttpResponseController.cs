@@ -5,12 +5,15 @@ using Newtonsoft.Json;
 using ReturnResponse.Api.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace ReturnResponse.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class HttpResponseController : ControllerBase
     {
         private readonly TableClient _tableClient;
@@ -21,12 +24,10 @@ namespace ReturnResponse.Api.Controllers
         /// <param name="configuration">The configuration settings.</param>
         private readonly IConfiguration _configuration;
 
-
-
         public HttpResponseController(IConfiguration configuration, TableServiceClient tableServiceClient)
         {
             _configuration = configuration;
-            _tableClient = tableServiceClient.GetTableClient("HttpResponseTable");
+            _tableClient = tableServiceClient.GetTableClient("retrunresponsetable");
             _tableClient.CreateIfNotExists();
         }
 
@@ -41,17 +42,20 @@ namespace ReturnResponse.Api.Controllers
             try
             {
                 // Create a new table entity from the HTTP response model
-                var entity = new TableEntity(httpResponse.StatusCode.ToString(), httpResponse.Id)
+                var entity = new TableEntity(string.Empty, httpResponse.Id)
                 {
+                    { "Id", httpResponse.Id },
+                    { "StatusCode", httpResponse.StatusCode },
                     { "ReasonPhrase", httpResponse.ReasonPhrase },
                     { "Timestamp", httpResponse.Timestamp },
                     { "Body", JsonConvert.SerializeObject(httpResponse.Body) },
-                    { "Headers", JsonConvert.SerializeObject(httpResponse.Headers) },
-                    { "Cookies", JsonConvert.SerializeObject(httpResponse.Cookies) }
+                    //{ "Headers", JsonConvert.SerializeObject(httpResponse.Headers) },
+                    //{ "Cookies", JsonConvert.SerializeObject(httpResponse.Cookies) }
                 };
 
                 // Add the entity to the table storage
                 await _tableClient.AddEntityAsync(entity);
+
                 return Ok(httpResponse);
             }
             catch (Exception ex)
@@ -65,41 +69,42 @@ namespace ReturnResponse.Api.Controllers
         /// Retrieves an HTTP response model by its ID.
         /// </summary>
         /// <param name="id">The ID of the HTTP response model to retrieve.</param>
-        /// <returns>An <see cref="IActionResult"/> representing the result of the operation.</returns>
+        /// <returns>An <see cref="HttpResponseMessage"/> representing the result of the operation.</returns>
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(string id)
         {
             try
             {
-                // Query the table storage for the entity with the specified ID
                 var query = _tableClient.QueryAsync<TableEntity>(filter: $"RowKey eq '{id}'");
-
-                // Iterate over the query results
                 await foreach (var entity in query)
                 {
-                    // Create a new HTTP response model from the table entity
                     var httpResponse = new HttpResponseModel
                     {
-                        Id = id,
-                        StatusCode = int.Parse(entity.PartitionKey),
+                        StatusCode = entity.GetInt32("StatusCode") ?? 200,
                         ReasonPhrase = entity.GetString("ReasonPhrase"),
                         Timestamp = entity.GetDateTime("Timestamp").GetValueOrDefault(),
-                        Body = JsonConvert.DeserializeObject<object>(entity.GetString("Body")),
-                        Headers = JsonConvert.DeserializeObject<Dictionary<string, string>>(entity.GetString("Headers")),
-                        Cookies = JsonConvert.DeserializeObject<Dictionary<string, string>>(entity.GetString("Cookies"))
+                        Body = entity.GetString("Body"),
+                        //Headers = AddHeadersToResponse(entity.GetString("Headers")),
+                        //Cookies = (Dictionary<string, string>)entity.GetString("Cookies")
                     };
 
-                    // Return the HTTP response model
-                    return Ok(httpResponse);
+                    return new ObjectResult(httpResponse.Body)
+                    {
+                        StatusCode = httpResponse.StatusCode
+                    };
                 }
 
-                //  If no entity was found, return a 404 Not Found response
-                return NotFound();
+                return new ObjectResult("Entity not found")
+                {
+                    StatusCode = (int)HttpStatusCode.NotFound
+                };
             }
             catch (Exception ex)
             {
-                //  If an error occurred, return a 500 Internal Server Error response
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return new ObjectResult("Internal server error")
+                {
+                    StatusCode = (int)HttpStatusCode.InternalServerError
+                };
             }
         }
 
@@ -117,11 +122,12 @@ namespace ReturnResponse.Api.Controllers
                 // Create a new table entity from the HTTP response model
                 var entity = new TableEntity(httpResponse.StatusCode.ToString(), id)
                 {
+                    { "StatusCode", httpResponse.StatusCode },
                     { "ReasonPhrase", httpResponse.ReasonPhrase },
                     { "Timestamp", httpResponse.Timestamp },
                     { "Body", JsonConvert.SerializeObject(httpResponse.Body) },
-                    { "Headers", JsonConvert.SerializeObject(httpResponse.Headers) },
-                    { "Cookies", JsonConvert.SerializeObject(httpResponse.Cookies) }
+                    //{ "Headers", JsonConvert.SerializeObject(httpResponse.Headers) },
+                    //{ "Cookies", JsonConvert.SerializeObject(httpResponse.Cookies) }
                 };
 
                 // Update the entity in the table storage
@@ -159,6 +165,24 @@ namespace ReturnResponse.Api.Controllers
             {
                 // If an error occurred, return a 500 Internal Server Error response
                 return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        // Utility method to add headers
+        private void AddHeadersToResponse(IDictionary<string, string> headers)
+        {
+            if (headers == null || !headers.Any())
+                return; // Exit early if the headers dictionary is null or empty
+
+            foreach (var (key, value) in headers)
+            {
+                if (string.IsNullOrWhiteSpace(key))
+                    continue; // Skip headers with null, empty, or whitespace keys
+
+                if (!Response.Headers.ContainsKey(key))
+                {
+                    Response.Headers[key] = value ?? string.Empty; // Add the header, ensuring value is not null
+                }
             }
         }
     }
